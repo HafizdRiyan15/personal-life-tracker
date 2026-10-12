@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Personal Life Tracker</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --green: #496653;
+            --dark: #34483c;
+            --light: #e1e8dc;
+            --cream: #f5f3eb;
+            --white: #ffffff;
+            --muted: #718071;
+            --border: #e3e5dc;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--cream);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        header {
+            background: var(--light);
+            padding: 20px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 23px;
+        }
+
+        header p {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        button, a {
+            font: inherit;
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+        }
+
+        .logout {
+            background: var(--green);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .welcome {
+            background: var(--green);
+            color: white;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 25px;
+        }
+
+        .welcome h2 {
+            font-size: 27px;
+            margin-bottom: 8px;
+        }
+
+        .welcome p {
+            color: #e5ede4;
+        }
+
+        .section-title {
+            margin: 25px 0 15px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 15px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            padding: 20px;
+        }
+
+        .card .icon {
+            font-size: 28px;
+        }
+
+        .card h3 {
+            margin: 8px 0;
+            font-size: 17px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .habit-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font: inherit;
+            background: white;
+        }
+
+        .primary {
+            background: var(--green);
+            color: white;
+            padding: 11px 15px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        .habit-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .habit-item {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 13px;
+            border-radius: 9px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .habit-item label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow-wrap: anywhere;
+        }
+
+        .habit-item input {
+            width: auto;
+        }
+
+        .done {
+            text-decoration: line-through;
+            color: var(--muted);
+        }
+
+        .delete {
+            background: #f8e8e5;
+            color: #a33225;
+            padding: 7px 10px;
+            border-radius: 7px;
+        }
+
+        .journal {
+            margin-top: 25px;
+        }
+
+        .journal textarea {
+            min-height: 110px;
+            resize: vertical;
+            margin: 10px 0;
+        }
+
+        #status {
+            margin-top: 12px;
+            font-size: 14px;
+            overflow-wrap: anywhere;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        @media (max-width: 550px) {
+            header {
+                padding: 18px;
+            }
+
+            main {
+                padding: 0 14px;
+            }
+
+            .welcome {
+                padding: 22px;
+            }
+
+            .welcome h2 {
+                font-size: 23px;
+            }
+
+            .habit-form {
+                flex-direction: column;
+            }
+
+            .habit-item {
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div>
+            <h1>Personal Life Tracker 🌿</h1>
+            <p>Dashboard perkembangan dirimu</p>
+        </div>
+        <button class="logout" id="logoutButton">Keluar</button>
+    </header>
+
+    <main>
+        <section class="welcome">
+            <h2 id="greeting">Selamat datang! 🌱</h2>
+            <p id="today"></p>
+            <p>Mulai dari langkah kecil. Progresmu tidak harus sempurna.</p>
+        </section>
+
+        <h2 class="section-title">Ringkasan Hari Ini</h2>
+
+        <section class="cards">
+            <article class="card">
+                <div class="icon">🌿</div>
+                <h3>Kebiasaan Hari Ini</h3>
+                <p id="habitSummary">0 kebiasaan selesai</p>
+            </article>
+
+            <article class="card">
+                <div class="icon">📖</div>
+                <h3>Jurnal Harian</h3>
+                <p class="muted">Tuliskan apa yang kamu pelajari hari ini.</p>
+            </article>
+
+            <article class="card">
+                <div class="icon">🎯</div>
+                <h3>Target Diri</h3>
+                <p class="muted">Bangun kemajuan melalui langkah kecil.</p>
+            </article>
+
+            <article class="card">
+                <div class="icon">💰</div>
+                <h3>Keuangan</h3>
+                <p class="muted">Fitur pencatatan keuangan akan dikembangkan berikutnya.</p>
+            </article>
+        </section>
+
+        <section>
+            <h2 class="section-title">Habit Tracker 🌱</h2>
+            <p class="muted" style="margin-bottom: 12px;">
+                Tambahkan kebiasaan yang ingin kamu lakukan hari ini.
+            </p>
+
+            <form class="habit-form" id="habitForm">
+                <input
+                    id="habitInput"
+                    type="text"
+                    placeholder="Contoh: Belajar coding 30 menit"
+                    maxlength="100"
+                    required
+                >
+                <button class="primary" type="submit">Tambah</button>
+            </form>
+
+            <div class="habit-list" id="habitList"></div>
+            <p id="habitEmpty" class="muted">Belum ada kebiasaan. Tambahkan satu di atas.</p>
+        </section>
+
+        <section class="journal">
+            <h2 class="section-title">Jurnal dan Refleksi 📖</h2>
+            <p class="muted">Apa hal penting yang kamu alami atau pelajari hari ini?</p>
+            <textarea id="journalInput" placeholder="Tulis refleksi harianmu di sini..."></textarea>
+            <button class="primary" id="saveJournal">Simpan Jurnal</button>
+            <p id="status" role="status"></p>
+        </section>
+    </main>
+
+    <footer>
+        Personal Life Tracker · Bertumbuh sedikit demi sedikit.
+    </footer>
+
+    <script type="module">
+        import { supabase } from "../js/supabase.js";
+
+        const greeting = document.getElementById("greeting");
+        const today = document.getElementById("today");
+        const habitForm = document.getElementById("habitForm");
+        const habitInput = document.getElementById("habitInput");
+        const habitList = document.getElementById("habitList");
+        const habitEmpty = document.getElementById("habitEmpty");
+        const habitSummary = document.getElementById("habitSummary");
+        const journalInput = document.getElementById("journalInput");
+        const status = document.getElementById("status");
+
+        const dateKey = new Date().toLocaleDateString("en-CA");
+        const habitsKey = "plt-habits-" + dateKey;
+        const journalKey = "plt-journal-" + dateKey;
+
+        today.textContent = new Date().toLocaleDateString("id-ID", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        });
+
+        let habits = [];
+        let userEmail = "";
+
+        function showStatus(text, isError = false) {
+            status.textContent = text;
+            status.style.color = isError ? "#b42318" : "#496653";
+        }
+
+        function renderHabits() {
+            habitList.replaceChildren();
+
+            habits.forEach((habit, index) => {
+                const item = document.createElement("div");
+                item.className = "habit-item";
+
+                const label = document.createElement("label");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.checked = habit.done;
+
+                const name = document.createElement("span");
+                name.textContent = habit.name;
+
+                if (habit.done) name.classList.add("done");
+
+                checkbox.addEventListener("change", () => {
+                    habit.done = checkbox.checked;
+                    saveHabits();
+                    renderHabits();
+                });
+
+                label.append(checkbox, name);
+
+                const deleteButton = document.createElement("button");
+                deleteButton.className = "delete";
+                deleteButton.textContent = "Hapus";
+
+                deleteButton.addEventListener("click", () => {
+                    habits.splice(index, 1);
+                    saveHabits();
+                    renderHabits();
+                });
+
+                item.append(label, deleteButton);
+                habitList.append(item);
+            });
+
+            habitEmpty.hidden = habits.length > 0;
+
+            const completed = habits.filter(habit => habit.done).length;
+            habitSummary.textContent =
+                `${completed} dari ${habits.length} kebiasaan selesai`;
+        }
+
+        function saveHabits() {
+            localStorage.setItem(habitsKey, JSON.stringify(habits));
+        }
+
+        habitForm.addEventListener("submit", event => {
+            event.preventDefault();
+
+            const name = habitInput.value.trim();
+            if (!name) return;
+
+            habits.push({ name, done: false });
+            saveHabits();
+            renderHabits();
+            habitInput.value = "";
+        });
+
+        document.getElementById("saveJournal").addEventListener("click", () => {
+            localStorage.setItem(journalKey, journalInput.value);
+            showStatus("Jurnal berhasil disimpan di browser ini.");
+        });
+
+        document.getElementById("logoutButton").addEventListener("click", async () => {
+            const { error } = await supabase.auth.signOut();
+
+            if (error) {
+                showStatus("Gagal keluar: " + error.message, true);
+                return;
+            }
+
+            window.location.href = "./login.html";
+        });
+
+        async function initializeDashboard() {
+            const { data, error } = await supabase.auth.getSession();
+
+            if (error || !data.session) {
+                window.location.replace("./login.html");
+                return;
+            }
+
+            userEmail = data.session.user.email || "";
+            greeting.textContent = userEmail
+                ? `Selamat datang! 🌱`
+                : "Selamat datang! 🌱";
+
+            habits = JSON.parse(localStorage.getItem(habitsKey) || "[]");
+            journalInput.value = localStorage.getItem(journalKey) || "";
+
+            renderHabits();
+        }
+
+        initializeDashboard();
+    </script>
+</body>
+</html>
