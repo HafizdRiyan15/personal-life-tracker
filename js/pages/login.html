@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Personal Life Tracker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f3eb;
+            color: #34483c;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 32px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 8px 30px #34483c12;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+            font-size: 25px;
+        }
+
+        .subtitle {
+            margin-bottom: 25px;
+            color: #718071;
+            line-height: 1.5;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 7px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d8dfd5;
+            border-radius: 9px;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 13px;
+            border: none;
+            border-radius: 9px;
+            background: #496653;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .switch {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .switch a {
+            color: #496653;
+            font-weight: bold;
+        }
+
+        #message {
+            margin-top: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .back {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            color: #496653;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <h1 id="heading">Selamat Datang 🌿</h1>
+        <p class="subtitle" id="subtitle">
+            Masuk dan lanjutkan perjalanan perkembangan dirimu.
+        </p>
+
+        <form id="authForm">
+            <label for="email">Email</label>
+            <input
+                type="email"
+                id="email"
+                autocomplete="email"
+                placeholder="nama@email.com"
+                required
+            >
+
+            <label for="password">Password</label>
+            <input
+                type="password"
+                id="password"
+                autocomplete="current-password"
+                minlength="6"
+                placeholder="Minimal 6 karakter"
+                required
+            >
+
+            <button type="submit" id="submitButton">Masuk</button>
+        </form>
+
+        <p id="message" role="status" aria-live="polite"></p>
+
+        <p class="switch">
+            <span id="switchText">Belum punya akun?</span>
+            <a href="#" id="switchMode">Daftar</a>
+        </p>
+
+        <a class="back" href="../index.html">← Kembali ke beranda</a>
+    </main>
+
+    <script type="module">
+        import { supabase } from "../js/supabase.js";
+
+        const form = document.getElementById("authForm");
+        const heading = document.getElementById("heading");
+        const subtitle = document.getElementById("subtitle");
+        const submitButton = document.getElementById("submitButton");
+        const switchText = document.getElementById("switchText");
+        const switchMode = document.getElementById("switchMode");
+        const message = document.getElementById("message");
+
+        let isRegister = false;
+
+        switchMode.addEventListener("click", (event) => {
+            event.preventDefault();
+            isRegister = !isRegister;
+
+            heading.textContent = isRegister
+                ? "Buat Akun Baru 🌱"
+                : "Selamat Datang 🌿";
+
+            subtitle.textContent = isRegister
+                ? "Mulai catat perjalanan perkembangan dirimu."
+                : "Masuk dan lanjutkan perjalanan perkembangan dirimu.";
+
+            submitButton.textContent = isRegister ? "Daftar" : "Masuk";
+            switchText.textContent = isRegister
+                ? "Sudah punya akun?"
+                : "Belum punya akun?";
+
+            switchMode.textContent = isRegister ? "Masuk" : "Daftar";
+            message.textContent = "";
+        });
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+
+            submitButton.disabled = true;
+            message.textContent = "Memproses...";
+            message.style.color = "#496653";
+
+            try {
+                if (isRegister) {
+                    const { data, error } = await supabase.auth.signUp({
+                        email,
+                        password
+                    });
+
+                    if (error) throw error;
+
+                    if (data.session) {
+                        window.location.href = "../index.html";
+                    } else {
+                        message.textContent =
+                            "Pendaftaran berhasil. Periksa email untuk verifikasi sebelum masuk.";
+                    }
+                } else {
+                    const { error } = await supabase.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+
+                    if (error) throw error;
+
+                    window.location.href = "../index.html";
+                }
+            } catch (error) {
+                message.textContent = error.message;
+                message.style.color = "#b42318";
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
