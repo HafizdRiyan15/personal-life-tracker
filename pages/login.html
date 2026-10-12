@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Personal Life Tracker</title>
+
     <style>
         * {
             box-sizing: border-box;
@@ -57,6 +58,11 @@
             font-size: 15px;
         }
 
+        input:focus {
+            outline: 2px solid #496653;
+            border-color: transparent;
+        }
+
         button {
             width: 100%;
             margin-top: 20px;
@@ -68,6 +74,10 @@
             font-size: 15px;
             font-weight: bold;
             cursor: pointer;
+        }
+
+        button:hover {
+            background: #34483c;
         }
 
         button:disabled {
@@ -100,11 +110,17 @@
             color: #496653;
             text-decoration: none;
         }
+
+        .back:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
+
 <body>
     <main class="container">
         <h1 id="heading">Selamat Datang 🌿</h1>
+
         <p class="subtitle" id="subtitle">
             Masuk dan lanjutkan perjalanan perkembangan dirimu.
         </p>
@@ -129,7 +145,9 @@
                 required
             >
 
-            <button type="submit" id="submitButton">Masuk</button>
+            <button type="submit" id="submitButton">
+                Masuk
+            </button>
         </form>
 
         <p id="message" role="status" aria-live="polite"></p>
@@ -139,7 +157,9 @@
             <a href="#" id="switchMode">Daftar</a>
         </p>
 
-        <a class="back" href="../index.html">← Kembali ke beranda</a>
+        <a class="back" href="../index.html">
+            ← Kembali ke beranda
+        </a>
     </main>
 
     <script type="module">
@@ -155,8 +175,10 @@
 
         let isRegister = false;
 
+        // Beralih antara halaman masuk dan daftar
         switchMode.addEventListener("click", (event) => {
             event.preventDefault();
+
             isRegister = !isRegister;
 
             heading.textContent = isRegister
@@ -167,20 +189,37 @@
                 ? "Mulai catat perjalanan perkembangan dirimu."
                 : "Masuk dan lanjutkan perjalanan perkembangan dirimu.";
 
-            submitButton.textContent = isRegister ? "Daftar" : "Masuk";
+            submitButton.textContent = isRegister
+                ? "Daftar"
+                : "Masuk";
+
             switchText.textContent = isRegister
                 ? "Sudah punya akun?"
                 : "Belum punya akun?";
 
-            switchMode.textContent = isRegister ? "Masuk" : "Daftar";
+            switchMode.textContent = isRegister
+                ? "Masuk"
+                : "Daftar";
+
+            document.getElementById("password").autocomplete =
+                isRegister ? "new-password" : "current-password";
+
             message.textContent = "";
+            message.style.color = "#496653";
         });
 
+        // Proses masuk atau pendaftaran
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value;
+            const email = document
+                .getElementById("email")
+                .value
+                .trim();
+
+            const password = document
+                .getElementById("password")
+                .value;
 
             submitButton.disabled = true;
             message.textContent = "Memproses...";
@@ -188,28 +227,41 @@
 
             try {
                 if (isRegister) {
-                    const { data, error } = await supabase.auth.signUp({
-                        email,
-                        password
-                    });
+                    // Membuat akun baru
+                    const { data, error } =
+                        await supabase.auth.signUp({
+                            email: email,
+                            password: password
+                        });
 
-                    if (error) throw error;
+                    if (error) {
+                        throw error;
+                    }
 
                     if (data.session) {
-                        window.location.href = "../index.html";
+                        // Langsung menuju dashboard jika sudah login
+                        window.location.href = "./dashboard.html";
                     } else {
+                        // Email perlu diverifikasi terlebih dahulu
                         message.textContent =
-                            "Pendaftaran berhasil. Periksa email untuk verifikasi sebelum masuk.";
+                            "Pendaftaran berhasil! Periksa email kamu untuk verifikasi. Setelah itu, masuk menggunakan akun yang sudah dibuat.";
+
+                        message.style.color = "#496653";
                     }
                 } else {
-                    const { error } = await supabase.auth.signInWithPassword({
-                        email,
-                        password
-                    });
+                    // Masuk menggunakan akun yang sudah terdaftar
+                    const { error } =
+                        await supabase.auth.signInWithPassword({
+                            email: email,
+                            password: password
+                        });
 
-                    if (error) throw error;
+                    if (error) {
+                        throw error;
+                    }
 
-                    window.location.href = "../index.html";
+                    // Login berhasil, buka dashboard
+                    window.location.href = "./dashboard.html";
                 }
             } catch (error) {
                 message.textContent = error.message;
