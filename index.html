@@ -1,10 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Personal Life Tracker untuk mencatat aktivitas, kebiasaan, jurnal, keuangan, dan perkembangan diri.">
     <title>Personal Life Tracker</title>
+
     <style>
         * {
             box-sizing: border-box;
@@ -12,16 +13,38 @@
             padding: 0;
         }
 
+        :root {
+            --green: #496653;
+            --green-dark: #34483c;
+            --green-light: #e1e8dc;
+            --cream: #f5f3eb;
+            --white: #ffffff;
+            --text-muted: #718071;
+            --border: #e3e5dc;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            background: #f5f3eb;
-            color: #34483c;
+            background: var(--cream);
+            color: var(--green-dark);
             line-height: 1.6;
         }
 
         header {
-            background: #e1e8dc;
-            padding: 24px 8%;
+            background: var(--green-light);
+            padding: 22px 7%;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         header h1 {
@@ -29,23 +52,40 @@
         }
 
         header p {
-            color: #667568;
+            color: var(--text-muted);
             margin-top: 4px;
         }
 
         nav {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            align-items: center;
+            gap: 9px;
             margin-top: 18px;
         }
 
         nav a {
             text-decoration: none;
-            color: #34483c;
-            padding: 8px 12px;
+            color: var(--green-dark);
+            padding: 9px 12px;
             border-radius: 8px;
-            background: #f5f3eb;
+            background: var(--cream);
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        nav a:hover {
+            background: #d0ddce;
+        }
+
+        nav .login-link {
+            background: var(--green);
+            color: var(--white);
+            font-weight: bold;
+        }
+
+        nav .login-link:hover {
+            background: #354e3d;
         }
 
         main {
@@ -55,37 +95,93 @@
         }
 
         .welcome {
-            background: #496653;
-            color: white;
-            padding: 30px;
+            background: var(--green);
+            color: var(--white);
+            padding: 35px;
             border-radius: 18px;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
 
         .welcome h2 {
-            font-size: 28px;
-            margin-bottom: 8px;
+            font-size: 30px;
+            margin-bottom: 10px;
         }
 
         .welcome p {
             color: #e5ede4;
+            max-width: 650px;
         }
 
-        .section-title {
-            margin-bottom: 15px;
+        .welcome-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        .button {
+            display: inline-block;
+            text-decoration: none;
+            border-radius: 9px;
+            padding: 11px 18px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .button-primary {
+            background: var(--white);
+            color: var(--green-dark);
+        }
+
+        .button-primary:hover {
+            background: var(--green-light);
+        }
+
+        .button-secondary {
+            border: 1px solid #dce7dc;
+            color: var(--white);
+        }
+
+        .button-secondary:hover {
+            background: #ffffff18;
+        }
+
+        .section-heading {
+            margin-bottom: 16px;
+        }
+
+        .section-heading h2 {
+            font-size: 23px;
+        }
+
+        .section-heading p {
+            color: var(--text-muted);
+            margin-top: 4px;
         }
 
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 16px;
         }
 
         .card {
-            background: white;
-            padding: 22px;
+            background: var(--white);
+            padding: 23px;
             border-radius: 14px;
-            border: 1px solid #e3e5dc;
+            border: 1px solid var(--border);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px #34483c0c;
+        }
+
+        .card-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
         }
 
         .card h3 {
@@ -94,21 +190,56 @@
         }
 
         .card p {
-            color: #6c786d;
+            color: var(--text-muted);
             font-size: 14px;
         }
 
         .status {
-            margin-top: 25px;
-            padding: 20px;
-            background: #e1e8dc;
+            margin-top: 28px;
+            padding: 24px;
+            background: var(--green-light);
             border-radius: 14px;
+        }
+
+        .status h3 {
+            margin-bottom: 8px;
+        }
+
+        .status p {
+            color: #596b5b;
+        }
+
+        .start-card {
+            margin-top: 28px;
+            padding: 25px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            text-align: center;
+        }
+
+        .start-card h2 {
+            margin-bottom: 8px;
+        }
+
+        .start-card p {
+            color: var(--text-muted);
+            margin-bottom: 18px;
+        }
+
+        .start-card .button {
+            background: var(--green);
+            color: var(--white);
+        }
+
+        .start-card .button:hover {
+            background: #354e3d;
         }
 
         footer {
             text-align: center;
-            padding: 25px;
-            color: #758074;
+            padding: 25px 20px;
+            color: var(--text-muted);
             font-size: 13px;
         }
 
@@ -117,33 +248,57 @@
                 padding: 20px;
             }
 
-            .welcome {
-                padding: 22px;
+            header h1 {
+                font-size: 23px;
             }
 
-            .welcome h2 {
-                font-size: 23px;
+            nav {
+                gap: 7px;
+            }
+
+            nav a {
+                padding: 8px 10px;
+                font-size: 13px;
             }
 
             main {
                 margin-top: 20px;
+                padding: 0 15px;
+            }
+
+            .welcome {
+                padding: 24px;
+            }
+
+            .welcome h2 {
+                font-size: 24px;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
-<body>
 
+<body>
     <header>
-        <h1>Personal Life Tracker</h1>
-        <p>Catat perjalananmu, pahami dirimu, dan terus berkembang.</p>
+        <div class="header-top">
+            <div>
+                <h1>Personal Life Tracker 🌿</h1>
+                <p>Catat perjalananmu, pahami dirimu, dan terus berkembang.</p>
+            </div>
+        </div>
 
         <nav>
-            <a href="index.html">Dashboard</a>
+            <a href="index.html">Beranda</a>
             <a href="#aktivitas">Aktivitas</a>
             <a href="#kebiasaan">Kebiasaan</a>
             <a href="#jurnal">Jurnal</a>
             <a href="#target">Target Hidup</a>
             <a href="#keuangan">Keuangan</a>
+            <a href="#progres">Progres</a>
+            <a href="pages/login.html" class="login-link">Login / Daftar</a>
         </nav>
     </header>
 
@@ -151,59 +306,120 @@
         <section class="welcome">
             <h2>Setiap Hari Adalah Proses 🌱</h2>
             <p>
-                Kamu tidak harus sempurna setiap hari.
-                Yang penting, kamu tetap mengenali proses dan
-                perkembangan dirimu sendiri.
+                Kamu tidak harus sempurna setiap hari. Perubahan bukan
+                tentang selalu berhasil, tetapi tentang memahami dirimu,
+                belajar dari kesalahan, dan terus melangkah.
             </p>
+
+            <div class="welcome-actions">
+                <a href="pages/login.html" class="button button-primary">
+                    Mulai Perjalananmu
+                </a>
+
+                <a href="#fitur" class="button button-secondary">
+                    Lihat Fitur
+                </a>
+            </div>
         </section>
 
-        <h2 class="section-title">Ruang Perkembanganmu</h2>
+        <section id="fitur">
+            <div class="section-heading">
+                <h2>Ruang Perkembanganmu</h2>
+                <p>
+                    Satu tempat untuk memahami kebiasaan dan perjalanan
+                    hidupmu dari waktu ke waktu.
+                </p>
+            </div>
 
-        <section class="cards">
-            <article class="card" id="aktivitas">
-                <h3>📅 Aktivitas Harian</h3>
-                <p>Catat kegiatan dan bagaimana waktumu digunakan.</p>
-            </article>
+            <div class="cards">
+                <article class="card" id="aktivitas">
+                    <div class="card-icon">📅</div>
+                    <h3>Aktivitas Harian</h3>
+                    <p>
+                        Catat kegiatan, durasi, dan bagaimana waktumu
+                        digunakan setiap hari.
+                    </p>
+                </article>
 
-            <article class="card" id="kebiasaan">
-                <h3>🌿 Habit Tracker</h3>
-                <p>Pantau kebiasaan baik tanpa menghapus progres sebelumnya.</p>
-            </article>
+                <article class="card" id="kebiasaan">
+                    <div class="card-icon">🌿</div>
+                    <h3>Habit Tracker</h3>
+                    <p>
+                        Bangun kebiasaan baik dan kurangi kebiasaan buruk
+                        tanpa menghapus progres sebelumnya.
+                    </p>
+                </article>
 
-            <article class="card" id="jurnal">
-                <h3>📖 Jurnal Diri</h3>
-                <p>Kenali suasana hati, hambatan, dan pelajaran harian.</p>
-            </article>
+                <article class="card" id="jurnal">
+                    <div class="card-icon">📖</div>
+                    <h3>Jurnal dan Refleksi</h3>
+                    <p>
+                        Catat suasana hati, hambatan, pelajaran, dan
+                        hal yang ingin diperbaiki.
+                    </p>
+                </article>
 
-            <article class="card" id="target">
-                <h3>🎯 Target Hidup</h3>
-                <p>Catat tujuan dan langkah kecil untuk mencapainya.</p>
-            </article>
+                <article class="card" id="target">
+                    <div class="card-icon">🎯</div>
+                    <h3>Target Hidup</h3>
+                    <p>
+                        Susun tujuan dan pantau kemajuanmu melalui
+                        langkah-langkah kecil yang realistis.
+                    </p>
+                </article>
 
-            <article class="card" id="keuangan">
-                <h3>💰 Keuangan</h3>
-                <p>Pantau pemasukan, pengeluaran, dan kebiasaan belanja.</p>
-            </article>
+                <article class="card" id="keuangan">
+                    <div class="card-icon">💰</div>
+                    <h3>Keuangan Pribadi</h3>
+                    <p>
+                        Catat pemasukan dan pengeluaran agar lebih
+                        memahami kebiasaan keuanganmu.
+                    </p>
+                </article>
 
-            <article class="card" id="progres">
-                <h3>📈 Perkembangan Diri</h3>
-                <p>Lihat perjalananmu dari waktu ke waktu.</p>
-            </article>
+                <article class="card" id="progres">
+                    <div class="card-icon">📈</div>
+                    <h3>Progres Diri</h3>
+                    <p>
+                        Lihat perubahan dari waktu ke waktu dan kenali
+                        perkembangan yang mungkin sebelumnya tidak terasa.
+                    </p>
+                </article>
+            </div>
         </section>
 
         <section class="status">
-            <h3>Mulai dari Hari Ini</h3>
+            <h3>Ingat, Progres Tidak Harus Sempurna</h3>
             <p>
-                Tidak perlu mengejar perubahan besar sekaligus.
-                Mulai dengan mencatat satu kegiatan dan satu hal
-                yang ingin kamu perbaiki.
+                Kalau suatu hari kamu kembali ke kebiasaan lama,
+                bukan berarti semua usahamu hilang. Kamu tetap punya
+                pengalaman dan pelajaran untuk melanjutkan perjalanan.
             </p>
+        </section>
+
+        <section class="start-card">
+            <h2>Mulai dari Hari Ini</h2>
+            <p>
+                Buat akun untuk mulai mencatat aktivitas dan perjalanan
+                perkembangan dirimu.
+            </p>
+
+            <a href="pages/login.html" class="button">
+                Login atau Buat Akun
+            </a>
         </section>
     </main>
 
     <footer>
-        Personal Life Tracker · Perjalanan kecil menuju diri yang lebih baik.
+        <p>
+            Personal Life Tracker · Perjalanan kecil menuju diri yang lebih baik.
+        </p>
+        <p>© <span id="year"></span> Personal Life Tracker</p>
     </footer>
 
+    <script>
+        document.getElementById("year").textContent =
+            new Date().getFullYear();
+    </script>
 </body>
 </html>
