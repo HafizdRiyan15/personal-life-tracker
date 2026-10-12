@@ -3,271 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Personal Life Tracker</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            background: #f5f3eb;
-            color: #34483c;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 420px;
-            padding: 32px;
-            background: white;
-            border-radius: 18px;
-            box-shadow: 0 8px 30px #34483c12;
-        }
-
-        h1 {
-            margin-bottom: 8px;
-            font-size: 25px;
-        }
-
-        .subtitle {
-            margin-bottom: 25px;
-            color: #718071;
-            line-height: 1.5;
-        }
-
-        label {
-            display: block;
-            margin: 15px 0 7px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #d8dfd5;
-            border-radius: 9px;
-            font-size: 15px;
-        }
-
-        input:focus {
-            outline: 2px solid #496653;
-            border-color: transparent;
-        }
-
-        button {
-            width: 100%;
-            margin-top: 20px;
-            padding: 13px;
-            border: none;
-            border-radius: 9px;
-            background: #496653;
-            color: white;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #34483c;
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: wait;
-        }
-
-        .switch {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 14px;
-        }
-
-        .switch a {
-            color: #496653;
-            font-weight: bold;
-        }
-
-        #message {
-            margin-top: 15px;
-            font-size: 14px;
-            line-height: 1.5;
-            overflow-wrap: anywhere;
-        }
-
-        .back {
-            display: block;
-            margin-top: 20px;
-            text-align: center;
-            color: #496653;
-            text-decoration: none;
-        }
-
-        .back:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <title>Masuk - Personal Life Tracker</title>
+    <link rel="stylesheet" href="../css/style.css">
 </head>
-
 <body>
-    <main class="container">
-        <h1 id="heading">Selamat Datang 🌿</h1>
+    <main class="auth-layout">
+        <section class="auth-side">
+            <a href="../index.html" class="brand">
+                <span class="brand-icon">✦</span>
+                Personal Life Tracker
+            </a>
+            <h1>Kenali dirimu. Atur langkahmu.</h1>
+            <p>
+                Kelola kebiasaan, jurnal, target, dan keuangan pribadi
+                dalam satu tempat.
+            </p>
+            <a href="../index.html" class="muted-text">← Kembali ke halaman utama</a>
+        </section>
 
-        <p class="subtitle" id="subtitle">
-            Masuk dan lanjutkan perjalanan perkembangan dirimu.
-        </p>
+        <section class="auth-main">
+            <div class="auth-card">
+                <h2 id="formTitle">Selamat datang!</h2>
+                <p class="muted-text" id="formDescription">Masuk untuk melanjutkan perjalananmu.</p>
 
-        <form id="authForm">
-            <label for="email">Email</label>
-            <input
-                type="email"
-                id="email"
-                autocomplete="email"
-                placeholder="nama@email.com"
-                required
-            >
+                <div class="app-nav">
+                    <a href="#" id="loginTab">Masuk</a>
+                    <a href="#" id="registerTab">Buat Akun</a>
+                </div>
 
-            <label for="password">Password</label>
-            <input
-                type="password"
-                id="password"
-                autocomplete="current-password"
-                minlength="6"
-                placeholder="Minimal 6 karakter"
-                required
-            >
+                <form id="authForm">
+                    <div class="form-group" id="nameGroup" hidden>
+                        <label for="fullName">Nama</label>
+                        <input id="fullName" type="text" autocomplete="name" placeholder="Nama kamu">
+                    </div>
 
-            <button type="submit" id="submitButton">
-                Masuk
-            </button>
-        </form>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input id="email" type="email" autocomplete="email" required placeholder="nama@email.com">
+                    </div>
 
-        <p id="message" role="status" aria-live="polite"></p>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input id="password" type="password" autocomplete="current-password" minlength="6" required placeholder="Minimal 6 karakter">
+                    </div>
 
-        <p class="switch">
-            <span id="switchText">Belum punya akun?</span>
-            <a href="#" id="switchMode">Daftar</a>
-        </p>
+                    <button class="full-width" id="submitButton" type="submit">Masuk</button>
+                </form>
 
-        <a class="back" href="../index.html">
-            ← Kembali ke beranda
-        </a>
+                <div id="authMessage" class="notice" role="status" aria-live="polite"></div>
+            </div>
+        </section>
     </main>
 
     <script type="module">
         import { supabase } from "../js/supabase.js";
 
-        const form = document.getElementById("authForm");
-        const heading = document.getElementById("heading");
-        const subtitle = document.getElementById("subtitle");
+        const authForm = document.getElementById("authForm");
+        const loginTab = document.getElementById("loginTab");
+        const registerTab = document.getElementById("registerTab");
+        const nameGroup = document.getElementById("nameGroup");
+        const fullName = document.getElementById("fullName");
+        const email = document.getElementById("email");
+        const password = document.getElementById("password");
         const submitButton = document.getElementById("submitButton");
-        const switchText = document.getElementById("switchText");
-        const switchMode = document.getElementById("switchMode");
-        const message = document.getElementById("message");
+        const authMessage = document.getElementById("authMessage");
+        const formTitle = document.getElementById("formTitle");
+        const formDescription = document.getElementById("formDescription");
 
-        let isRegister = false;
+        let mode = "login";
 
-        // Beralih antara halaman masuk dan daftar
-        switchMode.addEventListener("click", (event) => {
+        function showMessage(message, type = "error") {
+            authMessage.textContent = message;
+            authMessage.className = `notice notice-${type}`;
+        }
+
+        function setMode(nextMode) {
+            mode = nextMode;
+            const registering = mode === "register";
+
+            nameGroup.hidden = !registering;
+            fullName.required = registering;
+            password.autocomplete = registering ? "new-password" : "current-password";
+            submitButton.textContent = registering ? "Buat Akun" : "Masuk";
+            formTitle.textContent = registering ? "Buat akun baru" : "Selamat datang!";
+            formDescription.textContent = registering
+                ? "Daftar untuk mulai menyimpan perkembanganmu."
+                : "Masuk untuk melanjutkan perjalananmu.";
+            authMessage.textContent = "";
+            authMessage.className = "notice";
+        }
+
+        loginTab.addEventListener("click", (event) => {
             event.preventDefault();
-
-            isRegister = !isRegister;
-
-            heading.textContent = isRegister
-                ? "Buat Akun Baru 🌱"
-                : "Selamat Datang 🌿";
-
-            subtitle.textContent = isRegister
-                ? "Mulai catat perjalanan perkembangan dirimu."
-                : "Masuk dan lanjutkan perjalanan perkembangan dirimu.";
-
-            submitButton.textContent = isRegister
-                ? "Daftar"
-                : "Masuk";
-
-            switchText.textContent = isRegister
-                ? "Sudah punya akun?"
-                : "Belum punya akun?";
-
-            switchMode.textContent = isRegister
-                ? "Masuk"
-                : "Daftar";
-
-            document.getElementById("password").autocomplete =
-                isRegister ? "new-password" : "current-password";
-
-            message.textContent = "";
-            message.style.color = "#496653";
+            setMode("login");
         });
 
-        // Proses masuk atau pendaftaran
-        form.addEventListener("submit", async (event) => {
+        registerTab.addEventListener("click", (event) => {
+            event.preventDefault();
+            setMode("register");
+        });
+
+        async function redirectIfLoggedIn() {
+            const { data, error } = await supabase.auth.getSession();
+
+            if (!error && data.session) {
+                window.location.replace("./dashboard.html");
+            }
+        }
+
+        await redirectIfLoggedIn();
+
+        authForm.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            const email = document
-                .getElementById("email")
-                .value
-                .trim();
-
-            const password = document
-                .getElementById("password")
-                .value;
-
             submitButton.disabled = true;
-            message.textContent = "Memproses...";
-            message.style.color = "#496653";
+            submitButton.textContent = "Memproses...";
+            authMessage.textContent = "";
 
             try {
-                if (isRegister) {
-                    // Membuat akun baru
-                    const { data, error } =
-                        await supabase.auth.signUp({
-                            email: email,
-                            password: password
-                        });
+                const userEmail = email.value.trim();
+                const userPassword = password.value;
 
-                    if (error) {
-                        throw error;
-                    }
+                if (mode === "register") {
+                    const { data, error } = await supabase.auth.signUp({
+                        email: userEmail,
+                        password: userPassword,
+                        options: {
+                            data: {
+                                full_name: fullName.value.trim()
+                            }
+                        }
+                    });
+
+                    if (error) throw error;
 
                     if (data.session) {
-                        // Langsung menuju dashboard jika sudah login
-                        window.location.href = "./dashboard.html";
-                    } else {
-                        // Email perlu diverifikasi terlebih dahulu
-                        message.textContent =
-                            "Pendaftaran berhasil! Periksa email kamu untuk verifikasi. Setelah itu, masuk menggunakan akun yang sudah dibuat.";
-
-                        message.style.color = "#496653";
+                        window.location.replace("./dashboard.html");
+                        return;
                     }
+
+                    showMessage(
+                        "Pendaftaran berhasil dikirim. Periksa email untuk verifikasi, lalu masuk setelah akun terverifikasi.",
+                        "success"
+                    );
                 } else {
-                    // Masuk menggunakan akun yang sudah terdaftar
-                    const { error } =
-                        await supabase.auth.signInWithPassword({
-                            email: email,
-                            password: password
-                        });
+                    const { error } = await supabase.auth.signInWithPassword({
+                        email: userEmail,
+                        password: userPassword
+                    });
 
-                    if (error) {
-                        throw error;
-                    }
+                    if (error) throw error;
 
-                    // Login berhasil, buka dashboard
-                    window.location.href = "./dashboard.html";
+                    window.location.replace("./dashboard.html");
+                    return;
                 }
             } catch (error) {
-                message.textContent = error.message;
-                message.style.color = "#b42318";
+                showMessage(error.message || "Terjadi kesalahan. Coba lagi.");
             } finally {
                 submitButton.disabled = false;
+                submitButton.textContent = mode === "register" ? "Buat Akun" : "Masuk";
             }
         });
     </script>
