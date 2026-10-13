@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -8,6 +9,7 @@
 </head>
 <body>
     <main class="app-shell">
+
         <header class="app-header">
             <div>
                 <a href="../index.html" class="brand">
@@ -17,37 +19,58 @@
                 <h1 style="margin-top:18px">Dashboard</h1>
                 <p id="welcomeText">Memuat akun...</p>
             </div>
+
             <div class="app-actions">
-                <button id="refreshButton" class="button-outline" type="button">↻ Segarkan</button>
-                <button id="logoutButton" class="button-danger" type="button">Keluar</button>
+                <button id="refreshButton" class="button-outline"
+                    type="button">↻ Segarkan</button>
+                <button id="logoutButton" class="button-danger"
+                    type="button">Keluar</button>
             </div>
         </header>
 
         <nav class="app-nav">
-            <a href="#overview">Ringkasan</a>
-            <a href="#habits">Habit Tracker</a>
-            <a href="#journal">Jurnal</a>
-            <a href="#goals">Target</a>
-            <a href="#finance">Keuangan</a>
-            <a href="#statistics">Statistik</a>
+            <a href="dashboard.html" aria-current="page">Ringkasan</a>
+
+            <div class="feature-menu">
+                <button id="menuToggle" class="button-outline"
+                    type="button" aria-expanded="false"
+                    aria-controls="featureMenu" aria-label="Buka menu fitur">
+                    ⋮ Fitur
+                </button>
+
+                <div id="featureMenu" class="feature-menu-dropdown" hidden>
+                    <a href="habits.html">✓ Habit Tracker &amp; Goals</a>
+                    <a href="journal.html">✎ Journal</a>
+                    <a href="finance.html">↗ Finance</a>
+                </div>
+            </div>
         </nav>
 
-        <div id="appMessage" class="notice" role="status" aria-live="polite"></div>
+        <div id="appMessage" class="notice"
+            role="status" aria-live="polite"></div>
 
         <section id="overview">
+            <h2>Ringkasan Aktivitas</h2>
+            <p class="panel-description">
+                Pantau perkembangan kebiasaan, jurnal, target, dan keuanganmu.
+            </p>
+
             <div class="stats-grid">
                 <article class="stat-card">
                     <span>Habit selesai hari ini</span>
                     <strong id="habitSummary">0/0</strong>
                 </article>
+
                 <article class="stat-card">
                     <span>Jurnal tersimpan</span>
                     <strong id="journalSummary">0</strong>
                 </article>
+
                 <article class="stat-card">
                     <span>Target aktif</span>
                     <strong id="goalSummary">0</strong>
                 </article>
+
                 <article class="stat-card">
                     <span>Saldo tercatat</span>
                     <strong id="balanceSummary">Rp0</strong>
@@ -55,187 +78,47 @@
             </div>
         </section>
 
-        <div class="dashboard-grid">
-            <section class="panel" id="habits">
-                <h2>✓ Habit Tracker</h2>
-                <p class="panel-description">Buat kebiasaan dan tandai saat selesai. Status disimpan per tanggal.</p>
-                <form id="habitForm" class="inline-form">
-                    <input id="habitName" maxlength="120" required placeholder="Contoh: Belajar coding 30 menit">
-                    <button type="submit">Tambah</button>
-                </form>
-                <div class="form-group">
-                    <label for="habitDate">Tanggal habit</label>
-                    <input id="habitDate" type="date" required>
-                </div>
-                <div id="habitList" class="item-list">
-                    <div class="empty-state">Memuat habit...</div>
-                </div>
-            </section>
+        <section class="panel" style="margin-top:24px">
+            <h2>Mulai Aktivitasmu</h2>
+            <p class="panel-description">
+                Pilih fitur yang ingin kamu gunakan hari ini.
+            </p>
 
-            <section class="panel" id="journal">
-                <h2>✎ Jurnal & Refleksi</h2>
-                <p class="panel-description">Tulis catatan harian. Catatan lama tetap bisa dicari dan diedit.</p>
-                <form id="journalForm">
-                    <input id="journalId" type="hidden">
-                    <div class="form-group">
-                        <label for="journalDate">Tanggal jurnal</label>
-                        <input id="journalDate" type="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="journalTitle">Judul</label>
-                        <input id="journalTitle" maxlength="160" required placeholder="Contoh: Evaluasi hari ini">
-                    </div>
-                    <div class="form-group">
-                        <label for="journalContent">Isi refleksi</label>
-                        <textarea id="journalContent" maxlength="20000" required placeholder="Apa yang berjalan baik? Apa yang ingin diperbaiki?"></textarea>
-                    </div>
-                    <div class="item-actions">
-                        <button id="journalSubmit" type="submit">Simpan Jurnal</button>
-                        <button id="journalCancel" class="button-outline" type="button">Batal Edit</button>
-                    </div>
-                </form>
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span>✓</span>
+                    <h3>Habit Tracker &amp; Goals</h3>
+                    <p>Kelola kebiasaan dan target pribadi.</p>
+                    <a href="habits.html" class="button-link">
+                        Buka Fitur
+                    </a>
+                </article>
 
-                <div class="filter-row">
-                    <div>
-                        <label class="small-label" for="journalSearch">Cari jurnal</label>
-                        <input id="journalSearch" type="search" placeholder="Cari judul atau isi">
-                    </div>
-                    <div>
-                        <label class="small-label" for="journalFilterDate">Tanggal</label>
-                        <input id="journalFilterDate" type="date">
-                    </div>
-                    <div>
-                        <label class="small-label" for="journalSort">Urutan</label>
-                        <select id="journalSort">
-                            <option value="newest">Terbaru</option>
-                            <option value="oldest">Terlama</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="journalList" class="item-list">
-                    <div class="empty-state">Memuat jurnal...</div>
-                </div>
-            </section>
+                <article class="stat-card">
+                    <span>✎</span>
+                    <h3>Journal</h3>
+                    <p>Tulis refleksi dan catatan harian.</p>
+                    <a href="journal.html" class="button-link">
+                        Buka Fitur
+                    </a>
+                </article>
 
-            <section class="panel" id="goals">
-                <h2>◎ Target Pribadi</h2>
-                <p class="panel-description">Buat target dengan tenggat waktu dan tandai ketika tercapai.</p>
-                <form id="goalForm">
-                    <input id="goalId" type="hidden">
-                    <div class="form-group">
-                        <label for="goalTitle">Nama target</label>
-                        <input id="goalTitle" maxlength="160" required placeholder="Contoh: Menyelesaikan project website">
-                    </div>
-                    <div class="form-group">
-                        <label for="goalDeadline">Tenggat waktu (opsional)</label>
-                        <input id="goalDeadline" type="date">
-                    </div>
-                    <div class="item-actions">
-                        <button id="goalSubmit" type="submit">Tambah Target</button>
-                        <button id="goalCancel" class="button-outline" type="button">Batal Edit</button>
-                    </div>
-                </form>
-                <div id="goalList" class="item-list">
-                    <div class="empty-state">Memuat target...</div>
-                </div>
-            </section>
-
-            <section class="panel" id="finance">
-                <h2>↗ Keuangan Pribadi</h2>
-                <p class="panel-description">Catat pemasukan dan pengeluaran. Masukkan nominal dalam rupiah.</p>
-                <form id="financeForm">
-                    <input id="transactionId" type="hidden">
-                    <div class="form-group">
-                        <label for="transactionType">Jenis transaksi</label>
-                        <select id="transactionType" required>
-                            <option value="income">Pemasukan</option>
-                            <option value="expense">Pengeluaran</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="transactionAmount">Nominal (Rp)</label>
-                        <input id="transactionAmount" type="number" min="1" step="1" required placeholder="Contoh: 50000">
-                    </div>
-                    <div class="form-group">
-                        <label for="transactionCategory">Kategori</label>
-                        <input id="transactionCategory" maxlength="100" required placeholder="Contoh: Makan, transportasi">
-                    </div>
-                    <div class="form-group">
-                        <label for="transactionDate">Tanggal</label>
-                        <input id="transactionDate" type="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="transactionNote">Catatan (opsional)</label>
-                        <input id="transactionNote" maxlength="500" placeholder="Keterangan transaksi">
-                    </div>
-                    <div class="item-actions">
-                        <button id="transactionSubmit" type="submit">Simpan Transaksi</button>
-                        <button id="transactionCancel" class="button-outline" type="button">Batal Edit</button>
-                    </div>
-                </form>
-
-                <div class="filter-row">
-                    <div>
-                        <label class="small-label" for="financeTypeFilter">Jenis</label>
-                        <select id="financeTypeFilter">
-                            <option value="all">Semua</option>
-                            <option value="income">Pemasukan</option>
-                            <option value="expense">Pengeluaran</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="small-label" for="financeStartDate">Dari tanggal</label>
-                        <input id="financeStartDate" type="date">
-                    </div>
-                    <div>
-                        <label class="small-label" for="financeEndDate">Sampai tanggal</label>
-                        <input id="financeEndDate" type="date">
-                    </div>
-                </div>
-                <div class="stats-grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-                    <div class="stat-card">
-                        <span>Total pemasukan (filter)</span>
-                        <strong id="incomeSummary">Rp0</strong>
-                    </div>
-                    <div class="stat-card">
-                        <span>Total pengeluaran (filter)</span>
-                        <strong id="expenseSummary">Rp0</strong>
-                    </div>
-                </div>
-                <div id="transactionList" class="item-list">
-                    <div class="empty-state">Memuat transaksi...</div>
-                </div>
-            </section>
-
-            <section class="panel panel-wide" id="statistics">
-                <h2>▥ Statistik Perkembangan</h2>
-                <p class="panel-description">Ringkasan dihitung dari data yang tercatat di akunmu.</p>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <span>Habit selesai 7 hari</span>
-                        <strong id="weeklyHabitSummary">0</strong>
-                    </div>
-                    <div class="stat-card">
-                        <span>Jurnal 7 hari</span>
-                        <strong id="weeklyJournalSummary">0</strong>
-                    </div>
-                    <div class="stat-card">
-                        <span>Target tercapai</span>
-                        <strong id="completedGoalSummary">0</strong>
-                    </div>
-                    <div class="stat-card">
-                        <span>Jumlah transaksi</span>
-                        <strong id="transactionCountSummary">0</strong>
-                    </div>
-                </div>
-                <div id="weeklyHabitList" class="item-list"></div>
-            </section>
-        </div>
+                <article class="stat-card">
+                    <span>↗</span>
+                    <h3>Finance</h3>
+                    <p>Pantau pemasukan dan pengeluaran.</p>
+                    <a href="finance.html" class="button-link">
+                        Buka Fitur
+                    </a>
+                </article>
+            </div>
+        </section>
 
         <footer class="site-footer" style="margin-top:28px">
             <span>Personal Life Tracker</span>
             <a href="../index.html">Kembali ke halaman utama</a>
         </footer>
+
     </main>
 
     <script type="module" src="../js/app.js"></script>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance | Personal Life Tracker</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="app-shell">
+
+        <!-- HEADER -->
+        <header class="app-header">
+            <a href="../index.html" class="brand">
+                Personal Life Tracker
+            </a>
+
+            <div class="app-actions">
+                <span id="welcomeText">Memuat akun...</span>
+
+                <button id="refreshButton" class="button-outline" type="button">
+                    Refresh
+                </button>
+
+                <button id="logoutButton" class="button-outline" type="button">
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- NAVIGATION -->
+        <nav class="app-nav">
+            <a href="dashboard.html">Dashboard</a>
+
+            <div class="feature-menu">
+                <button
+                    id="menuToggle"
+                    class="button-outline"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="featureMenu"
+                >
+                    ⋮ Fitur
+                </button>
+
+                <div id="featureMenu" class="feature-menu-dropdown" hidden>
+                    <a href="habits.html">Habit Tracker &amp; Goals</a>
+                    <a href="journal.html">Journal</a>
+                    <a href="finance.html">Finance</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main>
+            <section class="page-heading">
+                <h1>Personal Finance</h1>
+                <p>
+                    Catat uang masuk dan keluar agar kamu lebih mudah
+                    mengatur keuangan setiap hari.
+                </p>
+            </section>
+
+            <div id="appMessage" class="notice" hidden></div>
+
+            <!-- FORM TRANSAKSI -->
+            <section class="panel">
+                <h2 id="transactionFormTitle">Tambah Transaksi</h2>
+
+                <p class="panel-description">
+                    Masukkan pemasukan atau pengeluaran yang ingin kamu catat.
+                </p>
+
+                <form id="transactionForm">
+                    <input
+                        type="hidden"
+                        id="transactionId"
+                        name="transactionId"
+                    >
+
+                    <div class="form-group">
+                        <label for="transactionType">Jenis transaksi</label>
+                        <select
+                            id="transactionType"
+                            name="transactionType"
+                            required
+                        >
+                            <option value="expense">Pengeluaran</option>
+                            <option value="income">Pemasukan</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transactionAmount">Nominal (Rp)</label>
+                        <input
+                            type="number"
+                            id="transactionAmount"
+                            name="transactionAmount"
+                            placeholder="Contoh: 25000"
+                            min="1"
+                            step="1"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transactionCategory">Kategori</label>
+                        <input
+                            type="text"
+                            id="transactionCategory"
+                            name="transactionCategory"
+                            placeholder="Contoh: Makan, transportasi, uang saku"
+                            maxlength="100"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transactionDate">Tanggal transaksi</label>
+                        <input
+                            type="date"
+                            id="transactionDate"
+                            name="transactionDate"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transactionNote">Catatan (opsional)</label>
+                        <textarea
+                            id="transactionNote"
+                            name="transactionNote"
+                            rows="3"
+                            placeholder="Keterangan tambahan..."
+                        ></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" id="transactionSubmit">
+                            Simpan Transaksi
+                        </button>
+
+                        <button
+                            type="button"
+                            id="transactionCancel"
+                            class="button-outline"
+                            hidden
+                        >
+                            Batal Edit
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- RINGKASAN KEUANGAN -->
+            <section class="panel">
+                <h2>Ringkasan Keuangan</h2>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span>Total Pemasukan</span>
+                        <h3 id="incomeSummary">Rp0</h3>
+                    </div>
+
+                    <div class="stat-card">
+                        <span>Total Pengeluaran</span>
+                        <h3 id="expenseSummary">Rp0</h3>
+                    </div>
+
+                    <div class="stat-card">
+                        <span>Saldo</span>
+                        <h3 id="balanceSummary">Rp0</h3>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIWAYAT TRANSAKSI -->
+            <section class="panel">
+                <h2>Riwayat Transaksi</h2>
+
+                <p class="panel-description">
+                    Periksa kembali pemasukan dan pengeluaran yang sudah dicatat.
+                </p>
+
+                <div id="transactionList" class="item-list">
+                    <p class="empty-state">Memuat riwayat transaksi...</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <p>
+                Personal Life Tracker &copy; <span id="year"></span>
+            </p>
+        </footer>
+
+    </div>
+
+    <script type="module" src="../js/app.js"></script>
+</body>
+</html>

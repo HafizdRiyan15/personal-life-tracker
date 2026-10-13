@@ -8,13 +8,21 @@ const state = {
     habitLogs: [],
     entries: [],
     goals: [],
-    transactions: []
+    transactions: [],
+    busy: false
 };
 
 const today = () => {
-    const date = new Date();
-    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    return local.toISOString().slice(0, 10);
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+};
+
+const daysAgo = (days) => {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
 };
 
 const money = (amount) =>
@@ -24,40 +32,56 @@ const money = (amount) =>
         maximumFractionDigits: 0
     }).format(Number(amount) || 0);
 
-const escapeHTML = (value) =>
-    String(value ?? "").replace(/[&<>"']/g, (character) => ({
+const esc = (value) =>
+    String(value ?? "").replace(/[&<>"']/g, (c) => ({
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
         "'": "&#39;"
-    })[character]);
+    })[c]);
 
 function notify(message, type = "success") {
     const box = $("appMessage");
+    if (!box) {
+        console[type === "error" ? "error" : "log"](message);
+        return;
+    }
+
     box.textContent = message;
     box.className = `notice notice-${type}`;
+    box.hidden = false;
 }
 
 function clearNotify() {
-    $("appMessage").textContent = "";
-    $("appMessage").className = "notice";
+    const box = $("appMessage");
+    if (!box) return;
+
+    box.textContent = "";
+    box.className = "notice";
+    box.hidden = true;
 }
 
 async function runAction(action, successMessage) {
+    if (state.busy) return;
+
     clearNotify();
 
     try {
         await action();
-        if (successMessage) notify(successMessage, "success");
+        if (successMessage) notify(successMessage);
     } catch (error) {
         console.error(error);
-        notify(error.message || "Terjadi kesalahan. Coba lagi.", "error");
+        notify(error.message || "Terjadi kesalahan.", "error");
     }
 }
 
-async function getRows(table, queryBuilder) {
-    const { data, error } = await queryBuilder(
+function on(id, event, callback) {
+    $(id)?.addEventListener(event, callback);
+}
+
+async function getRows(table, build = (query) => query) {
+    const { data, error } = await build(
         supabase.from(table).select("*")
     );
 
@@ -65,26 +89,35 @@ async function getRows(table, queryBuilder) {
     return data || [];
 }
 
-async function loadAll() {
-    const selectedDate = $("habitDate").value || today();
+// ======================================
+// MEMUAT DATA SUPABASE
+// ======================================
 
-    const [habits, logs, entries, goals, transactions] = await Promise.all([
-        getRows("plt_habits", (query) =>
-            query.order("created_at", { ascending: false })
-        ),
-        getRows("plt_habit_logs", (query) =>
-            query.eq("log_date", selectedDate)
-        ),
-        getRows("plt_entries", (query) =>
-            query.order("entry_date", { ascending: false })
-        ),
-        getRows("plt_goals", (query) =>
-            query.order("created_at", { ascending: false })
-        ),
-        getRows("plt_transactions", (query) =>
-            query.order("transaction_date", { ascending: false })
-        )
-    ]);
+async function loadAll() {
+    const selectedDate = $("habitDate")?.value || today();
+
+    // Data mencakup tujuh hari terakhir dan tanggal habit yang dipilih.
+    const startDate = daysAgo(6);
+    const endDate = selectedDate > today() ? selectedDate : today();
+
+    const [habits, logs, entries, goals, transactions] =
+        await Promise.all([
+            getRows("plt_habits", q =>
+                q.order("created_at", { ascending: false })
+            ),
+            getRows("plt_habit_logs", q =>
+                q.gte("log_date", startDate).lte("log_date", endDate)
+            ),
+            getRows("plt_entries", q =>
+                q.order("entry_date", { ascending: false })
+            ),
+            getRows("plt_goals", q =>
+                q.order("created_at", { ascending: false })
+            ),
+            getRows("plt_transactions", q =>
+                q.order("transaction_date", { ascending: false })
+            )
+        ]);
 
     state.habits = habits;
     state.habitLogs = logs;
@@ -104,225 +137,51 @@ function renderAll() {
     renderStatistics();
 }
 
+// ======================================
+// HABIT TRACKER
+// ======================================
+
 function renderHabits() {
     const list = $("habitList");
-    const selectedDate = $("habitDate").value || today();
+    if (!list) return;
+
+    const date = $("habitDate")?.value || today();
 
     if (!state.habits.length) {
-        list.innerHTML = '<div class="empty-state">Belum ada habit. Tambahkan kebiasaan pertamamu.</div>';
+        list.innerHTML =
+            '<div class="empty-state">Belum ada habit. Tambahkan kebiasaan pertamamu.</div>';
         return;
     }
 
-    list.innerHTML = state.habits.map((habit) => {
-        const log = state.habitLogs.find((item) => item.habit_id === habit.id);
+    list.innerHTML = state.habits.map(habit => {
+        const log = state.habitLogs.find(item =>
+            String(item.habit_id) === String(habit.id) &&
+            item.log_date === date
+        );
+
         const completed = Boolean(log?.completed);
 
         return `
             <div class="item-row">
                 <div class="item-main">
-                    <input
-                        type="checkbox"
+                    <input type="checkbox"
                         data-action="toggle-habit"
-                        data-id="${habit.id}"
-                        aria-label="Tandai habit selesai"
+                        data-id="${esc(habit.id)}"
                         ${completed ? "checked" : ""}
-                    >
+                        aria-label="Tandai habit selesai">
+
                     <div>
-                        <strong class="${completed ? "completed-text" : ""}">${escapeHTML(habit.title)}</strong>
-                        <p>${completed ? "Selesai" : "Belum selesai"} · ${escapeHTML(selectedDate)}</p>
-                    </div>
-                </div>
-                <div class="item-actions">
-                    <button class="button-outline" data-action="edit-habit" data-id="${habit.id}" type="button">Edit</button>
-                    <button class="button-danger" data-action="delete-habit" data-id="${habit.id}" type="button">Hapus</button>
-                </div>
-            </div>`;
-    }).join("");
-}
-
-function renderJournals() {
-    const list = $("journalList");
-    const search = $("journalSearch").value.trim().toLowerCase();
-    const dateFilter = $("journalFilterDate").value;
-    const sort = $("journalSort").value;
-
-    let entries = state.entries.filter((entry) => {
-        const matchesSearch =
-            `${entry.title} ${entry.content}`.toLowerCase().includes(search);
-        const matchesDate = !dateFilter || entry.entry_date === dateFilter;
-        return matchesSearch && matchesDate;
-    });
-
-    entries.sort((a, b) => {
-        const comparison = a.entry_date.localeCompare(b.entry_date);
-        return sort === "oldest" ? comparison : -comparison;
-    });
-
-    if (!entries.length) {
-        list.innerHTML = '<div class="empty-state">Tidak ada jurnal yang cocok dengan pencarianmu.</div>';
-        return;
-    }
-
-    list.innerHTML = entries.map((entry) => `
-        <article class="item-row">
-            <div class="item-main">
-                <div>
-                    <strong>${escapeHTML(entry.title)}</strong>
-                    <p>${escapeHTML(entry.entry_date)}</p>
-                    <p>${escapeHTML(entry.content.length > 180
-                        ? entry.content.slice(0, 180) + "..."
-                        : entry.content)}</p>
-                </div>
-            </div>
-            <div class="item-actions">
-                <button class="button-outline" data-action="edit-journal" data-id="${entry.id}" type="button">Edit</button>
-                <button class="button-danger" data-action="delete-journal" data-id="${entry.id}" type="button">Hapus</button>
-            </div>
-        </article>
-    `).join("");
-}
-
-function renderGoals() {
-    const list = $("goalList");
-
-    if (!state.goals.length) {
-        list.innerHTML = '<div class="empty-state">Belum ada target. Tambahkan satu target kecil terlebih dahulu.</div>';
-        return;
-    }
-
-    list.innerHTML = state.goals.map((goal) => `
-        <div class="item-row">
-            <div class="item-main">
-                <input
-                    type="checkbox"
-                    data-action="toggle-goal"
-                    data-id="${goal.id}"
-                    aria-label="Tandai target tercapai"
-                    ${goal.is_completed ? "checked" : ""}
-                >
-                <div>
-                    <strong class="${goal.is_completed ? "completed-text" : ""}">${escapeHTML(goal.title)}</strong>
-                    <p>Tenggat: ${goal.deadline ? escapeHTML(goal.deadline) : "Belum ditentukan"}</p>
-                    <p>${goal.is_completed ? "Target tercapai" : "Target masih berjalan"}</p>
-                </div>
-            </div>
-            <div class="item-actions">
-                <button class="button-outline" data-action="edit-goal" data-id="${goal.id}" type="button">Edit</button>
-                <button class="button-danger" data-action="delete-goal" data-id="${goal.id}" type="button">Hapus</button>
-            </div>
-        </div>
-    `).join("");
-}
-
-function getFilteredTransactions() {
-    const type = $("financeTypeFilter").value;
-    const start = $("financeStartDate").value;
-    const end = $("financeEndDate").value;
-
-    return state.transactions.filter((item) => {
-        if (type !== "all" && item.transaction_type !== type) return false;
-        if (start && item.transaction_date < start) return false;
-        if (end && item.transaction_date > end) return false;
-        return true;
-    });
-}
-
-function renderTransactions() {
-    const list = $("transactionList");
-    const transactions = getFilteredTransactions();
-
-    const income = transactions
-        .filter((item) => item.transaction_type === "income")
-        .reduce((sum, item) => sum + Number(item.amount), 0);
-
-    const expense = transactions
-        .filter((item) => item.transaction_type === "expense")
-        .reduce((sum, item) => sum + Number(item.amount), 0);
-
-    $("incomeSummary").textContent = money(income);
-    $("expenseSummary").textContent = money(expense);
-
-    if (!transactions.length) {
-        list.innerHTML = '<div class="empty-state">Belum ada transaksi pada filter ini.</div>';
-        return;
-    }
-
-    list.innerHTML = transactions.map((item) => {
-        const isIncome = item.transaction_type === "income";
-        return `
-            <div class="item-row">
-                <div class="item-main">
-                    <div>
-                        <strong>${escapeHTML(item.category)}</strong>
-                        <p>${escapeHTML(item.transaction_date)} · ${isIncome ? "Pemasukan" : "Pengeluaran"}</p>
-                        ${item.note ? `<p>${escapeHTML(item.note)}</p>` : ""}
-                        <strong class="${isIncome ? "money-positive" : "money-negative"}">
-                            ${isIncome ? "+" : "-"}${money(item.amount)}
+                        <strong class="${completed ? "completed-text" : ""}">
+                            ${esc(habit.title)}
                         </strong>
+                        <p>${completed ? "Selesai" : "Belum selesai"} · ${esc(date)}</p>
                     </div>
                 </div>
                 <div class="item-actions">
-                    <button class="button-outline" data-action="edit-transaction" data-id="${item.id}" type="button">Edit</button>
-                    <button class="button-danger" data-action="delete-transaction" data-id="${item.id}" type="button">Hapus</button>
-                </div>
-            </div>`;
-    }).join("");
-}
-
-function renderSummary() {
-    const completedToday = state.habitLogs.filter((item) => item.completed).length;
-    $("habitSummary").textContent = `${completedToday}/${state.habits.length}`;
-    $("journalSummary").textContent = String(state.entries.length);
-    $("goalSummary").textContent = String(state.goals.filter((item) => !item.is_completed).length);
-
-    const income = state.transactions
-        .filter((item) => item.transaction_type === "income")
-        .reduce((sum, item) => sum + Number(item.amount), 0);
-
-    const expense = state.transactions
-        .filter((item) => item.transaction_type === "expense")
-        .reduce((sum, item) => sum + Number(item.amount), 0);
-
-    $("balanceSummary").textContent = money(income - expense);
-}
-
-function renderStatistics() {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - 6);
-
-    const startDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-        .toISOString().slice(0, 10);
-
-    const recentEntries = state.entries.filter((item) => item.entry_date >= startDate);
-    const recentLogs = state.habitLogs.filter((item) =>
-        item.log_date >= startDate && item.completed
-    );
-
-    $("weeklyHabitSummary").textContent = String(recentLogs.length);
-    $("weeklyJournalSummary").textContent = String(recentEntries.length);
-    $("completedGoalSummary").textContent =
-        String(state.goals.filter((item) => item.is_completed).length);
-    $("transactionCountSummary").textContent = String(state.transactions.length);
-
-    const list = $("weeklyHabitList");
-    if (!state.habits.length) {
-        list.innerHTML = '<div class="empty-state">Statistik habit akan muncul setelah kamu menambahkan kebiasaan.</div>';
-        return;
-    }
-
-    list.innerHTML = state.habits.map((habit) => {
-        const logs = state.habitLogs.filter((item) =>
-            item.habit_id === habit.id && item.completed
-        ).length;
-
-        return `
-            <div class="item-row">
-                <div class="item-main">
-                    <div style="width:100%">
-                        <strong>${escapeHTML(habit.title)}</strong>
-                        <p>${logs} habit selesai pada tanggal yang sedang dipilih</p>
-                    </div>
+                    <button class="button-outline" type="button"
+                        data-action="edit-habit" data-id="${esc(habit.id)}">Edit</button>
+                    <button class="button-danger" type="button"
+                        data-action="delete-habit" data-id="${esc(habit.id)}">Hapus</button>
                 </div>
             </div>`;
     }).join("");
@@ -330,8 +189,9 @@ function renderStatistics() {
 
 async function addHabit(event) {
     event.preventDefault();
-    const title = $("habitName").value.trim();
-    if (!title) return;
+
+    const title = $("habitName")?.value.trim();
+    if (!title) throw new Error("Nama habit wajib diisi.");
 
     const { error } = await supabase.from("plt_habits").insert({
         user_id: state.user.id,
@@ -345,40 +205,43 @@ async function addHabit(event) {
 }
 
 async function toggleHabit(id, checked) {
-    const selectedDate = $("habitDate").value || today();
-    const existing = state.habitLogs.find((item) => item.habit_id === id);
+    const date = $("habitDate")?.value || today();
+
+    const existing = state.habitLogs.find(item =>
+        String(item.habit_id) === String(id) &&
+        item.log_date === date
+    );
+
+    let result;
 
     if (existing) {
-        const { error } = await supabase
-            .from("plt_habit_logs")
+        result = await supabase.from("plt_habit_logs")
             .update({ completed: checked })
             .eq("id", existing.id);
-
-        if (error) throw error;
     } else {
-        const { error } = await supabase.from("plt_habit_logs").insert({
+        result = await supabase.from("plt_habit_logs").insert({
             user_id: state.user.id,
             habit_id: id,
-            log_date: selectedDate,
+            log_date: date,
             completed: checked
         });
-
-        if (error) throw error;
     }
 
+    if (result.error) throw result.error;
     await loadAll();
 }
 
 async function editHabit(id) {
-    const habit = state.habits.find((item) => item.id === id);
+    const habit = state.habits.find(item =>
+        String(item.id) === String(id)
+    );
     if (!habit) return;
 
     const title = prompt("Ubah nama habit:", habit.title);
     if (title === null) return;
     if (!title.trim()) throw new Error("Nama habit tidak boleh kosong.");
 
-    const { error } = await supabase
-        .from("plt_habits")
+    const { error } = await supabase.from("plt_habits")
         .update({ title: title.trim() })
         .eq("id", id);
 
@@ -387,18 +250,73 @@ async function editHabit(id) {
 }
 
 async function deleteHabit(id) {
-    if (!confirm("Hapus habit ini beserta riwayatnya?")) return;
+    if (!confirm("Hapus habit beserta seluruh riwayatnya?")) return;
 
-    const { error } = await supabase.from("plt_habits").delete().eq("id", id);
+    const { error: logError } = await supabase.from("plt_habit_logs")
+        .delete().eq("habit_id", id);
+
+    if (logError) throw logError;
+
+    const { error } = await supabase.from("plt_habits")
+        .delete().eq("id", id);
+
     if (error) throw error;
-
     await loadAll();
+}
+
+// ======================================
+// JOURNAL
+// ======================================
+
+function renderJournals() {
+    const list = $("journalList");
+    if (!list) return;
+
+    const search = ($("journalSearch")?.value || "").trim().toLowerCase();
+    const date = $("journalFilterDate")?.value || "";
+    const sort = $("journalSort")?.value || "newest";
+
+    const entries = state.entries
+        .filter(item =>
+            `${item.title} ${item.content}`.toLowerCase().includes(search) &&
+            (!date || item.entry_date === date)
+        )
+        .sort((a, b) => {
+            const comparison = a.entry_date.localeCompare(b.entry_date);
+            return sort === "oldest" ? comparison : -comparison;
+        });
+
+    if (!entries.length) {
+        list.innerHTML =
+            '<div class="empty-state">Belum ada jurnal yang cocok.</div>';
+        return;
+    }
+
+    list.innerHTML = entries.map(entry => `
+        <article class="item-row">
+            <div class="item-main">
+                <div>
+                    <strong>${esc(entry.title)}</strong>
+                    <p>${esc(entry.entry_date)}</p>
+                    <p>${esc(entry.content.length > 180
+                        ? entry.content.slice(0, 180) + "..."
+                        : entry.content)}</p>
+                </div>
+            </div>
+            <div class="item-actions">
+                <button class="button-outline" type="button"
+                    data-action="edit-journal" data-id="${esc(entry.id)}">Edit</button>
+                <button class="button-danger" type="button"
+                    data-action="delete-journal" data-id="${esc(entry.id)}">Hapus</button>
+            </div>
+        </article>
+    `).join("");
 }
 
 async function saveJournal(event) {
     event.preventDefault();
 
-    const id = $("journalId").value;
+    const id = $("journalId")?.value;
     const payload = {
         user_id: state.user.id,
         title: $("journalTitle").value.trim(),
@@ -421,38 +339,84 @@ async function saveJournal(event) {
 }
 
 function resetJournalForm() {
-    $("journalForm").reset();
-    $("journalId").value = "";
-    $("journalDate").value = today();
-    $("journalSubmit").textContent = "Simpan Jurnal";
+    $("journalForm")?.reset();
+    if ($("journalId")) $("journalId").value = "";
+    if ($("journalDate")) $("journalDate").value = today();
+    if ($("journalSubmit")) $("journalSubmit").textContent = "Simpan Catatan";
+    if ($("journalFormTitle")) $("journalFormTitle").textContent = "Tulis Catatan Baru";
+    if ($("journalCancel")) $("journalCancel").hidden = true;
 }
 
 function editJournal(id) {
-    const entry = state.entries.find((item) => item.id === id);
+    const entry = state.entries.find(item => String(item.id) === String(id));
     if (!entry) return;
 
     $("journalId").value = entry.id;
     $("journalTitle").value = entry.title;
     $("journalContent").value = entry.content;
     $("journalDate").value = entry.entry_date;
-    $("journalSubmit").textContent = "Simpan Perubahan";
-    $("journal").scrollIntoView({ behavior: "smooth" });
+
+    if ($("journalSubmit")) $("journalSubmit").textContent = "Simpan Perubahan";
+    if ($("journalFormTitle")) $("journalFormTitle").textContent = "Edit Catatan";
+    if ($("journalCancel")) $("journalCancel").hidden = false;
+
+    $("journalForm")?.scrollIntoView({ behavior: "smooth" });
 }
 
 async function deleteJournal(id) {
     if (!confirm("Hapus jurnal ini secara permanen?")) return;
 
-    const { error } = await supabase.from("plt_entries").delete().eq("id", id);
+    const { error } = await supabase.from("plt_entries")
+        .delete().eq("id", id);
+
     if (error) throw error;
 
-    if ($("journalId").value === id) resetJournalForm();
+    if (String($("journalId")?.value) === String(id)) resetJournalForm();
     await loadAll();
+}
+
+// ======================================
+// GOALS
+// ======================================
+
+function renderGoals() {
+    const list = $("goalList");
+    if (!list) return;
+
+    if (!state.goals.length) {
+        list.innerHTML =
+            '<div class="empty-state">Belum ada target. Tambahkan target pertamamu.</div>';
+        return;
+    }
+
+    list.innerHTML = state.goals.map(goal => `
+        <div class="item-row">
+            <div class="item-main">
+                <input type="checkbox" data-action="toggle-goal"
+                    data-id="${esc(goal.id)}" ${goal.is_completed ? "checked" : ""}
+                    aria-label="Tandai target tercapai">
+                <div>
+                    <strong class="${goal.is_completed ? "completed-text" : ""}">
+                        ${esc(goal.title)}
+                    </strong>
+                    <p>Tenggat: ${goal.deadline ? esc(goal.deadline) : "Belum ditentukan"}</p>
+                    <p>${goal.is_completed ? "Target tercapai" : "Target masih berjalan"}</p>
+                </div>
+            </div>
+            <div class="item-actions">
+                <button class="button-outline" type="button"
+                    data-action="edit-goal" data-id="${esc(goal.id)}">Edit</button>
+                <button class="button-danger" type="button"
+                    data-action="delete-goal" data-id="${esc(goal.id)}">Hapus</button>
+            </div>
+        </div>
+    `).join("");
 }
 
 async function saveGoal(event) {
     event.preventDefault();
 
-    const id = $("goalId").value;
+    const id = $("goalId")?.value;
     const payload = {
         user_id: state.user.id,
         title: $("goalTitle").value.trim(),
@@ -472,27 +436,29 @@ async function saveGoal(event) {
 }
 
 function resetGoalForm() {
-    $("goalForm").reset();
-    $("goalId").value = "";
-    $("goalSubmit").textContent = "Tambah Target";
+    $("goalForm")?.reset();
+    if ($("goalId")) $("goalId").value = "";
+    if ($("goalSubmit")) $("goalSubmit").textContent = "Tambah Goal";
+    if ($("goalCancel")) $("goalCancel").hidden = true;
 }
 
 function editGoal(id) {
-    const goal = state.goals.find((item) => item.id === id);
+    const goal = state.goals.find(item => String(item.id) === String(id));
     if (!goal) return;
 
     $("goalId").value = goal.id;
     $("goalTitle").value = goal.title;
     $("goalDeadline").value = goal.deadline || "";
-    $("goalSubmit").textContent = "Simpan Perubahan";
-    $("goals").scrollIntoView({ behavior: "smooth" });
+
+    if ($("goalSubmit")) $("goalSubmit").textContent = "Simpan Perubahan";
+    if ($("goalCancel")) $("goalCancel").hidden = false;
+
+    $("goalForm")?.scrollIntoView({ behavior: "smooth" });
 }
 
 async function toggleGoal(id, checked) {
-    const { error } = await supabase
-        .from("plt_goals")
-        .update({ is_completed: checked })
-        .eq("id", id);
+    const { error } = await supabase.from("plt_goals")
+        .update({ is_completed: checked }).eq("id", id);
 
     if (error) throw error;
     await loadAll();
@@ -501,21 +467,92 @@ async function toggleGoal(id, checked) {
 async function deleteGoal(id) {
     if (!confirm("Hapus target ini?")) return;
 
-    const { error } = await supabase.from("plt_goals").delete().eq("id", id);
+    const { error } = await supabase.from("plt_goals")
+        .delete().eq("id", id);
+
     if (error) throw error;
 
-    if ($("goalId").value === id) resetGoalForm();
+    if (String($("goalId")?.value) === String(id)) resetGoalForm();
     await loadAll();
+}
+
+// ======================================
+// FINANCE
+// ======================================
+
+function getFilteredTransactions() {
+    const type = $("financeTypeFilter")?.value || "all";
+    const start = $("financeStartDate")?.value || "";
+    const end = $("financeEndDate")?.value || "";
+
+    if (start && end && start > end) {
+        notify("Tanggal awal tidak boleh melewati tanggal akhir.", "error");
+        return [];
+    }
+
+    return state.transactions.filter(item =>
+        (type === "all" || item.transaction_type === type) &&
+        (!start || item.transaction_date >= start) &&
+        (!end || item.transaction_date <= end)
+    );
+}
+
+function renderTransactions() {
+    const list = $("transactionList");
+    const transactions = getFilteredTransactions();
+
+    const income = transactions
+        .filter(item => item.transaction_type === "income")
+        .reduce((sum, item) => sum + Number(item.amount), 0);
+
+    const expense = transactions
+        .filter(item => item.transaction_type === "expense")
+        .reduce((sum, item) => sum + Number(item.amount), 0);
+
+    if ($("incomeSummary")) $("incomeSummary").textContent = money(income);
+    if ($("expenseSummary")) $("expenseSummary").textContent = money(expense);
+
+    if (!list) return;
+
+    if (!transactions.length) {
+        list.innerHTML =
+            '<div class="empty-state">Belum ada transaksi pada filter ini.</div>';
+        return;
+    }
+
+    list.innerHTML = transactions.map(item => {
+        const isIncome = item.transaction_type === "income";
+
+        return `
+            <div class="item-row">
+                <div class="item-main">
+                    <div>
+                        <strong>${esc(item.category)}</strong>
+                        <p>${esc(item.transaction_date)} · ${isIncome ? "Pemasukan" : "Pengeluaran"}</p>
+                        ${item.note ? `<p>${esc(item.note)}</p>` : ""}
+                        <strong class="${isIncome ? "money-positive" : "money-negative"}">
+                            ${isIncome ? "+" : "-"}${money(item.amount)}
+                        </strong>
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <button class="button-outline" type="button"
+                        data-action="edit-transaction" data-id="${esc(item.id)}">Edit</button>
+                    <button class="button-danger" type="button"
+                        data-action="delete-transaction" data-id="${esc(item.id)}">Hapus</button>
+                </div>
+            </div>`;
+    }).join("");
 }
 
 async function saveTransaction(event) {
     event.preventDefault();
 
-    const id = $("transactionId").value;
+    const id = $("transactionId")?.value;
     const amount = Number($("transactionAmount").value);
 
     if (!Number.isSafeInteger(amount) || amount <= 0) {
-        throw new Error("Nominal harus berupa bilangan bulat lebih dari nol.");
+        throw new Error("Nominal harus bilangan bulat lebih dari nol.");
     }
 
     const payload = {
@@ -526,6 +563,10 @@ async function saveTransaction(event) {
         transaction_date: $("transactionDate").value,
         note: $("transactionNote").value.trim() || null
     };
+
+    if (!["income", "expense"].includes(payload.transaction_type)) {
+        throw new Error("Jenis transaksi tidak valid.");
+    }
 
     if (!payload.category || !payload.transaction_date) {
         throw new Error("Kategori dan tanggal transaksi wajib diisi.");
@@ -542,14 +583,16 @@ async function saveTransaction(event) {
 }
 
 function resetTransactionForm() {
-    $("financeForm").reset();
-    $("transactionId").value = "";
-    $("transactionDate").value = today();
-    $("transactionSubmit").textContent = "Simpan Transaksi";
+    $("transactionForm")?.reset();
+    if ($("transactionId")) $("transactionId").value = "";
+    if ($("transactionDate")) $("transactionDate").value = today();
+    if ($("transactionSubmit")) $("transactionSubmit").textContent = "Simpan Transaksi";
+    if ($("transactionFormTitle")) $("transactionFormTitle").textContent = "Tambah Transaksi";
+    if ($("transactionCancel")) $("transactionCancel").hidden = true;
 }
 
 function editTransaction(id) {
-    const item = state.transactions.find((transaction) => transaction.id === id);
+    const item = state.transactions.find(t => String(t.id) === String(id));
     if (!item) return;
 
     $("transactionId").value = item.id;
@@ -558,23 +601,125 @@ function editTransaction(id) {
     $("transactionCategory").value = item.category;
     $("transactionDate").value = item.transaction_date;
     $("transactionNote").value = item.note || "";
-    $("transactionSubmit").textContent = "Simpan Perubahan";
-    $("finance").scrollIntoView({ behavior: "smooth" });
+
+    if ($("transactionSubmit")) $("transactionSubmit").textContent = "Simpan Perubahan";
+    if ($("transactionFormTitle")) $("transactionFormTitle").textContent = "Edit Transaksi";
+    if ($("transactionCancel")) $("transactionCancel").hidden = false;
+
+    $("transactionForm")?.scrollIntoView({ behavior: "smooth" });
 }
 
 async function deleteTransaction(id) {
     if (!confirm("Hapus transaksi ini?")) return;
 
-    const { error } = await supabase
-        .from("plt_transactions")
-        .delete()
-        .eq("id", id);
+    const { error } = await supabase.from("plt_transactions")
+        .delete().eq("id", id);
 
     if (error) throw error;
 
-    if ($("transactionId").value === id) resetTransactionForm();
+    if (String($("transactionId")?.value) === String(id)) {
+        resetTransactionForm();
+    }
+
     await loadAll();
 }
+
+// ======================================
+// DASHBOARD & STATISTIK
+// ======================================
+
+function renderSummary() {
+    if ($("habitSummary")) {
+        const date = $("habitDate")?.value || today();
+        const completed = state.habitLogs.filter(log =>
+            log.log_date === date && log.completed &&
+            state.habits.some(habit => String(habit.id) === String(log.habit_id))
+        ).length;
+
+        $("habitSummary").textContent = `${completed}/${state.habits.length}`;
+    }
+
+    if ($("journalSummary")) {
+        $("journalSummary").textContent = state.entries.length;
+    }
+
+    if ($("goalSummary")) {
+        $("goalSummary").textContent =
+            state.goals.filter(goal => !goal.is_completed).length;
+    }
+
+    if ($("balanceSummary")) {
+        const income = state.transactions
+            .filter(t => t.transaction_type === "income")
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        const expense = state.transactions
+            .filter(t => t.transaction_type === "expense")
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        $("balanceSummary").textContent = money(income - expense);
+    }
+}
+
+function renderStatistics() {
+    const start = daysAgo(6);
+    const end = today();
+
+    const recentEntries = state.entries.filter(entry =>
+        entry.entry_date >= start && entry.entry_date <= end
+    );
+
+    const recentLogs = state.habitLogs.filter(log =>
+        log.log_date >= start && log.log_date <= end && log.completed &&
+        state.habits.some(habit => String(habit.id) === String(log.habit_id))
+    );
+
+    if ($("weeklyHabitSummary")) {
+        $("weeklyHabitSummary").textContent = recentLogs.length;
+    }
+
+    if ($("weeklyJournalSummary")) {
+        $("weeklyJournalSummary").textContent = recentEntries.length;
+    }
+
+    if ($("completedGoalSummary")) {
+        $("completedGoalSummary").textContent =
+            state.goals.filter(goal => goal.is_completed).length;
+    }
+
+    if ($("transactionCountSummary")) {
+        $("transactionCountSummary").textContent = state.transactions.length;
+    }
+
+    const list = $("weeklyHabitList");
+    if (!list) return;
+
+    if (!state.habits.length) {
+        list.innerHTML =
+            '<div class="empty-state">Statistik muncul setelah kamu menambahkan habit.</div>';
+        return;
+    }
+
+    list.innerHTML = state.habits.map(habit => {
+        const count = recentLogs.filter(log =>
+            String(log.habit_id) === String(habit.id)
+        ).length;
+
+        return `
+            <div class="item-row">
+                <div class="item-main">
+                    <div>
+                        <strong>${esc(habit.title)}</strong>
+                        <p>${count} kali selesai dalam 7 hari terakhir</p>
+                    </div>
+                </div>
+            </div>`;
+    }).join("");
+}
+
+// ======================================
+// AKSI TOMBOL
+// ======================================
 
 function handleListAction(event) {
     const control = event.target.closest("[data-action]");
@@ -619,111 +764,139 @@ function handleListAction(event) {
 }
 
 function setInitialDates() {
-    $("habitDate").value = today();
-    $("journalDate").value = today();
-    $("transactionDate").value = today();
-    $("journalCancel").hidden = true;
-    $("goalCancel").hidden = true;
-    $("transactionCancel").hidden = true;
+    if ($("habitDate")) $("habitDate").value = today();
+    if ($("journalDate")) $("journalDate").value = today();
+    if ($("transactionDate")) $("transactionDate").value = today();
+
+    ["journalCancel", "goalCancel", "transactionCancel"].forEach(id => {
+        if ($(id)) $(id).hidden = true;
+    });
+
+    if ($("year")) $("year").textContent = new Date().getFullYear();
 }
 
 function attachEvents() {
-    $("logoutButton").addEventListener("click", () => runAction(async () => {
+    on("logoutButton", "click", () => runAction(async () => {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
-        window.location.replace("./login.html");
+        window.location.replace("../login.html");
     }));
 
-    $("refreshButton").addEventListener("click", () =>
+    on("refreshButton", "click", () =>
         runAction(loadAll, "Data berhasil diperbarui.")
     );
 
-    $("habitForm").addEventListener("submit", (event) =>
+    on("habitForm", "submit", event =>
         runAction(() => addHabit(event), "Habit berhasil disimpan.")
     );
 
-    $("habitDate").addEventListener("change", () =>
-        runAction(loadAll)
-    );
+    on("habitDate", "change", () => runAction(loadAll));
 
-    $("habitList").addEventListener("click", handleListAction);
-    $("habitList").addEventListener("change", (event) => {
-        if (event.target.dataset.action === "toggle-habit") {
+    on("habitList", "click", event => {
+        if (event.target.matches('input[type="checkbox"][data-action]')) return;
+        handleListAction(event);
+    });
+
+    on("habitList", "change", event => {
+        if (event.target.matches('[data-action="toggle-habit"]')) {
             handleListAction(event);
         }
     });
 
-    $("journalForm").addEventListener("submit", (event) =>
-        runAction(() => saveJournal(event), "Jurnal berhasil disimpan.")
+    on("journalForm", "submit", event =>
+        runAction(() => saveJournal(event), "Catatan berhasil disimpan.")
     );
 
-    $("journalCancel").addEventListener("click", resetJournalForm);
-    $("journalList").addEventListener("click", handleListAction);
-    $("journalSearch").addEventListener("input", renderJournals);
-    $("journalFilterDate").addEventListener("change", renderJournals);
-    $("journalSort").addEventListener("change", renderJournals);
+    on("journalCancel", "click", resetJournalForm);
+    on("journalList", "click", handleListAction);
+    on("journalSearch", "input", renderJournals);
+    on("journalFilterDate", "change", renderJournals);
+    on("journalSort", "change", renderJournals);
 
-    $("goalForm").addEventListener("submit", (event) =>
+    on("goalForm", "submit", event =>
         runAction(() => saveGoal(event), "Target berhasil disimpan.")
     );
 
-    $("goalCancel").addEventListener("click", resetGoalForm);
-    $("goalList").addEventListener("click", handleListAction);
-    $("goalList").addEventListener("change", (event) => {
-        if (event.target.dataset.action === "toggle-goal") {
+    on("goalCancel", "click", resetGoalForm);
+
+    on("goalList", "click", event => {
+        if (event.target.matches('input[type="checkbox"][data-action]')) return;
+        handleListAction(event);
+    });
+
+    on("goalList", "change", event => {
+        if (event.target.matches('[data-action="toggle-goal"]')) {
             handleListAction(event);
         }
     });
 
-    $("financeForm").addEventListener("submit", (event) =>
+    on("transactionForm", "submit", event =>
         runAction(() => saveTransaction(event), "Transaksi berhasil disimpan.")
     );
 
-    $("transactionCancel").addEventListener("click", resetTransactionForm);
-    $("transactionList").addEventListener("click", handleListAction);
+    on("transactionCancel", "click", resetTransactionForm);
+    on("transactionList", "click", handleListAction);
 
-    ["financeTypeFilter", "financeStartDate", "financeEndDate"].forEach((id) => {
-        $(id).addEventListener("change", renderTransactions);
+    ["financeTypeFilter", "financeStartDate", "financeEndDate"].forEach(id => {
+        on(id, "change", renderTransactions);
     });
 
-    $("journalCancel").hidden = false;
-    $("goalCancel").hidden = false;
-    $("transactionCancel").hidden = false;
+    on("menuToggle", "click", () => {
+        const menu = $("featureMenu");
+        if (!menu) return;
+
+        menu.hidden = !menu.hidden;
+        $("menuToggle").setAttribute("aria-expanded", String(!menu.hidden));
+    });
+
+    document.addEventListener("click", event => {
+        const menu = $("featureMenu");
+        const toggle = $("menuToggle");
+
+        if (!menu || !toggle || menu.hidden) return;
+
+        if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+            menu.hidden = true;
+            toggle.setAttribute("aria-expanded", "false");
+        }
+    });
 }
+
+// ======================================
+// INISIALISASI
+// ======================================
 
 async function init() {
     setInitialDates();
 
-    const { data, error } = await supabase.auth.getSession();
-
-    if (error || !data.session) {
-        window.location.replace("./login.html");
-        return;
-    }
-
-    state.user = data.session.user;
-
-    const fullName = state.user.user_metadata?.full_name;
-    $("welcomeText").textContent =
-        `Halo, ${fullName || state.user.email}! Yuk lanjutkan perkembanganmu.`;
-
-    attachEvents();
-
     try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        if (!data.session) {
+            window.location.replace("../login.html");
+            return;
+        }
+
+        state.user = data.session.user;
+
+        const name = state.user.user_metadata?.full_name;
+
+        if ($("welcomeText")) {
+            $("welcomeText").textContent =
+                `Halo, ${name || state.user.email}! Yuk lanjutkan perkembanganmu.`;
+        }
+
+        attachEvents();
         await loadAll();
     } catch (error) {
         console.error(error);
         notify(
-            "Data belum berhasil dimuat. Pastikan tabel Supabase sudah dibuat dan kebijakan RLS aktif. Detail: " + error.message,
+            "Gagal memuat aplikasi. Periksa koneksi internet, tabel Supabase, dan kebijakan RLS. Detail: " +
+            error.message,
             "error"
         );
     }
-
-    supabase.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_OUT" || !session) {
-            window.location.replace("./login.html");
-        }
-    });
 }
 
 init();

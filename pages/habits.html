@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker & Goals | Personal Life Tracker</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="app-shell">
+
+        <header class="app-header">
+            <a href="../index.html" class="brand">
+                Personal Life Tracker
+            </a>
+
+            <div class="app-actions">
+                <span id="welcomeText">Memuat akun...</span>
+
+                <button id="refreshButton" class="button-outline" type="button">
+                    Refresh
+                </button>
+
+                <button id="logoutButton" class="button-outline" type="button">
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <nav class="app-nav">
+            <a href="dashboard.html">Dashboard</a>
+
+            <div class="feature-menu">
+                <button
+                    id="menuToggle"
+                    class="button-outline"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="featureMenu"
+                >
+                    ⋮ Fitur
+                </button>
+
+                <div id="featureMenu" class="feature-menu-dropdown" hidden>
+                    <a href="habits.html">Habit Tracker &amp; Goals</a>
+                    <a href="journal.html">Journal</a>
+                    <a href="finance.html">Finance</a>
+                </div>
+            </div>
+        </nav>
+
+        <main>
+            <section class="page-heading">
+                <h1>Habit Tracker &amp; Goals</h1>
+                <p>
+                    Bangun kebiasaan baik dan pantau target yang ingin kamu capai.
+                </p>
+            </section>
+
+            <div id="appMessage" class="notice" hidden></div>
+
+            <!-- HABIT TRACKER -->
+            <section class="panel">
+                <h2>Habit Tracker</h2>
+                <p class="panel-description">
+                    Tambahkan kebiasaan dan tandai jika sudah kamu lakukan hari ini.
+                </p>
+
+                <form id="habitForm" class="inline-form">
+                    <div class="form-group">
+                        <label for="habitName">Nama kebiasaan</label>
+                        <input
+                            type="text"
+                            id="habitName"
+                            name="habitName"
+                            placeholder="Contoh: Belajar coding"
+                            maxlength="100"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="habitDate">Tanggal</label>
+                        <input
+                            type="date"
+                            id="habitDate"
+                            name="habitDate"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit">Tambah Habit</button>
+                </form>
+
+                <h3>Daftar Kebiasaan</h3>
+                <div id="habitList" class="item-list">
+                    <p class="empty-state">Memuat daftar kebiasaan...</p>
+                </div>
+            </section>
+
+            <!-- GOALS -->
+            <section class="panel">
+                <h2>Goals</h2>
+                <p class="panel-description">
+                    Catat target, tentukan tenggat waktu, lalu tandai ketika selesai.
+                </p>
+
+                <form id="goalForm" class="inline-form">
+                    <input type="hidden" id="goalId" name="goalId">
+
+                    <div class="form-group">
+                        <label for="goalTitle">Nama target</label>
+                        <input
+                            type="text"
+                            id="goalTitle"
+                            name="goalTitle"
+                            placeholder="Contoh: Menyelesaikan project website"
+                            maxlength="150"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="goalDeadline">Tenggat waktu</label>
+                        <input
+                            type="date"
+                            id="goalDeadline"
+                            name="goalDeadline"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" id="goalSubmit">
+                            Tambah Goal
+                        </button>
+
+                        <button
+                            type="button"
+                            id="goalCancel"
+                            class="button-outline"
+                            hidden
+                        >
+                            Batal Edit
+                        </button>
+                    </div>
+                </form>
+
+                <h3>Daftar Target</h3>
+                <div id="goalList" class="item-list">
+                    <p class="empty-state">Memuat daftar target...</p>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p>Personal Life Tracker &copy; <span id="year"></span></p>
+        </footer>
+
+    </div>
+
+    <script type="module" src="../js/app.js"></script>
+</body>
+</html>
